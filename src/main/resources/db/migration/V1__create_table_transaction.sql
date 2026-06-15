@@ -1,0 +1,8 @@
+CREATE TABLE transactions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    usuario VARCHAR(255) NOT NULL,
+    valor DECIMAL(19, 2) NOT NULL,
+    categoria VARCHAR(255),
+    tipo VARCHAR(50) NOT NULL,
+    data DATETIME NOT NULL
+);
