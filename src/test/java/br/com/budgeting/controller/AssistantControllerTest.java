@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -48,6 +49,24 @@ class AssistantControllerTest {
                         .file(audioFile)
                         .with(csrf())
                         .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+                .andExpect(status().isOk())
+                .andExpect(content().string(respostaEsperada));
+    }
+
+    @Test
+    @WithMockUser(username = "pedro")
+    void deveProcessarComandoDeTextoComSucesso() throws Exception {
+        // Given
+        String comandoTexto = "Registrar despesa de R$ 50 em alimentação";
+        String respostaEsperada = "Sucesso: despesa de R$ 50 salva.";
+
+        when(assistantAgent.processarComandoDeTexto(any(String.class))).thenReturn(respostaEsperada);
+
+        // When & Then
+        mockMvc.perform(post("/api/assistant/text")
+                        .with(csrf())
+                        .contentType(MediaType.TEXT_PLAIN_VALUE)
+                        .content(comandoTexto))
                 .andExpect(status().isOk())
                 .andExpect(content().string(respostaEsperada));
     }

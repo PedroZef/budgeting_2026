@@ -54,4 +54,21 @@ public class AssistantController {
             return ResponseEntity.internalServerError().body("Erro: " + detalhe);
         }
     }
+
+    @Operation(
+        summary = "Processar comando de texto",
+        description = "Recebe um comando financeiro por escrito em formato de texto simples, interpreta via IA e salva no banco."
+    )
+    @PostMapping(value = "/text", consumes = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> handleTextCommand(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Comando financeiro escrito. Ex: Registrar despesa de 50 reais em alimentação")
+            @RequestBody String commandText) {
+        try {
+            String resposta = agent.processarComandoDeTexto(commandText);
+            return ResponseEntity.ok(resposta);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Erro: " + e.getMessage());
+        }
+    }
 }

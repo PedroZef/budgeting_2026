@@ -18,12 +18,23 @@ public class AssistantAgent {
         this.transcriptionModel = transcriptionModel;
         this.transactionTools = transactionTools;
         this.chatClient = chatClientBuilder
-                .defaultSystem("Você é um assistente financeiro direto e objetivo. Ouça o comando, execute a ferramenta necessária e responda com um texto curto confirmando a ação.")
+                .defaultSystem("Você é um assistente financeiro direto e objetivo. Ouça o comando, execute a ferramenta necessária e responda com um texto curto confirmando a ação. " +
+                        "Ao registrar a transação, você deve normalizar a categoria para termos padronizados em MAIÚSCULAS. Exemplos de mapeamento:\n" +
+                        "- 'comida', 'restaurante', 'almoço', 'jantar', 'lanche' -> 'ALIMENTAÇÃO'\n" +
+                        "- 'roupa', 'camiseta', 'vestuário', 'calçado', 'loja' -> 'ROUPAS'\n" +
+                        "- 'ações', 'tesouro', 'poupança', 'cripto', 'cdi' -> 'INVESTIMENTOS'\n" +
+                        "- 'gasolina', 'uber', 'passagem', 'ônibus', 'pedágio' -> 'TRANSPORTE'\n" +
+                        "- 'cinema', 'show', 'jogo', 'festa', 'viagem' -> 'LAZER'\n" +
+                        "Mapeie outros termos correlatos de forma inteligente para essas ou novas categorias padronizadas.")
                 .build();
     }
 
     public String processarComandoDeVoz(Resource arquivoDeAudio) {
         String texto = transcriptionModel.call(new AudioTranscriptionPrompt(arquivoDeAudio)).getResult().getOutput();
+        return processarComandoDeTexto(texto);
+    }
+
+    public String processarComandoDeTexto(String texto) {
         return chatClient.prompt()
                 .user(texto)
                 .tools(transactionTools)
