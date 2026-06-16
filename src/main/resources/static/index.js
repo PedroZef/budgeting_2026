@@ -45,8 +45,171 @@ document.addEventListener('DOMContentLoaded', () => {
     const formTipo = document.getElementById('form-tipo');
     const formUsuario = document.getElementById('form-usuario');
 
+    // Helper function to inject Authorization headers
+    function getAuthHeaders(headers = {}) {
+        const token = localStorage.getItem('token');
+        if (token) {
+            return {
+                ...headers,
+                'Authorization': `Bearer ${token}`
+            };
+        }
+        return headers;
+    }
+
+    // UI Elements - Theme & Authentication
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const loginOverlay = document.getElementById('login-overlay');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const loginUsernameInput = document.getElementById('login-username');
+    const loginPasswordInput = document.getElementById('login-password');
+    const registerUsernameInput = document.getElementById('register-username');
+    const registerPasswordInput = document.getElementById('register-password');
+    const authErrorMsg = document.getElementById('auth-error-msg');
+    const switchToRegisterBtn = document.getElementById('switch-to-register');
+    const switchToLoginBtn = document.getElementById('switch-to-login');
+    const logoutBtn = document.getElementById('logout-btn');
+    const headerUser = document.getElementById('header-user');
+
+    // Theme toggle initialization and event listener
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
+    }
+
+    themeToggleBtn.addEventListener('click', () => {
+        document.body.classList.toggle('light-theme');
+        const isLight = document.body.classList.contains('light-theme');
+        if (isLight) {
+            themeIcon.classList.remove('fa-sun');
+            themeIcon.classList.add('fa-moon');
+            localStorage.setItem('theme', 'light');
+        } else {
+            themeIcon.classList.remove('fa-moon');
+            themeIcon.classList.add('fa-sun');
+            localStorage.setItem('theme', 'dark');
+        }
+        updateCharts(); // Re-render charts with correct text colors
+    });
+
+    // Switch between Login and Register
+    switchToRegisterBtn.addEventListener('click', () => {
+        loginForm.classList.add('hidden');
+        registerForm.classList.remove('hidden');
+        authErrorMsg.innerText = '';
+    });
+
+    switchToLoginBtn.addEventListener('click', () => {
+        registerForm.classList.add('hidden');
+        loginForm.classList.remove('hidden');
+        authErrorMsg.innerText = '';
+    });
+
+    function checkAuthState() {
+        const token = localStorage.getItem('token');
+        const username = localStorage.getItem('username');
+        if (token && username) {
+            loginOverlay.classList.add('hidden');
+            logoutBtn.classList.remove('hidden');
+            headerUser.innerText = username;
+            fetchTransactions();
+        } else {
+            loginOverlay.classList.remove('hidden');
+            logoutBtn.classList.add('hidden');
+            headerUser.innerText = 'Sistema Offline';
+        }
+    }
+
+    function handleLogout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        checkAuthState();
+        // Clear UI
+        transactions = [];
+        renderTransactions();
+        updateCharts();
+    }
+
+    // Login Form Submit
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        authErrorMsg.style.color = '#ff4e7e';
+        authErrorMsg.innerText = '';
+        const username = loginUsernameInput.value.trim();
+        const password = loginPasswordInput.value;
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (!response.ok) {
+                throw new Error('Usuário ou senha inválidos.');
+            }
+
+            const data = await response.json();
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('username', data.username);
+            
+            // Clean inputs
+            loginUsernameInput.value = '';
+            loginPasswordInput.value = '';
+            
+            checkAuthState();
+        } catch (err) {
+            authErrorMsg.innerText = err.message;
+        }
+    });
+
+    // Register Form Submit
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        authErrorMsg.style.color = '#ff4e7e';
+        authErrorMsg.innerText = '';
+        const username = registerUsernameInput.value.trim();
+        const password = registerPasswordInput.value;
+
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Erro ao registrar usuário.');
+            }
+
+            authErrorMsg.style.color = '#05e695';
+            authErrorMsg.innerText = 'Usuário registrado com sucesso! Faça login.';
+            
+            registerUsernameInput.value = '';
+            registerPasswordInput.value = '';
+            
+            setTimeout(() => {
+                authErrorMsg.style.color = '#ff4e7e';
+                registerForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+                authErrorMsg.innerText = '';
+            }, 1500);
+
+        } catch (err) {
+            authErrorMsg.innerText = err.message;
+        }
+    });
+
+    // Logout Button
+    logoutBtn.addEventListener('click', handleLogout);
+
     // Initial load
-    fetchTransactions();
+    checkAuthState();
 
     /* ==========================================================================
        Voice Recording Section
@@ -125,8 +288,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(ASSISTANT_API, {
                 method: 'POST',
+                headers: getAuthHeaders(),
                 body: formData
             });
+
+            if (response.status === 401 || response.status === 403) {
+                handleLogout();
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error('Falha no processamento do servidor.');
@@ -154,7 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
        ========================================================================== */
     async function fetchTransactions() {
         try {
-            const response = await fetch(TRANSACTIONS_API);
+            const response = await fetch(TRANSACTIONS_API, {
+                headers: getAuthHeaders()
+            });
+            if (response.status === 401 || response.status === 403) {
+                handleLogout();
+                return;
+            }
             if (!response.ok) throw new Error('Não foi possível carregar as transações.');
             transactions = await response.json();
             renderTransactions();
@@ -217,7 +392,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function deleteTransaction(id) {
         if (!confirm('Deseja realmente remover esta transação?')) return;
         try {
-            const response = await fetch(`${TRANSACTIONS_API}/${id}`, { method: 'DELETE' });
+            const response = await fetch(`${TRANSACTIONS_API}/${id}`, { 
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            if (response.status === 401 || response.status === 403) {
+                handleLogout();
+                return;
+            }
             if (!response.ok) throw new Error('Erro ao deletar transação.');
             fetchTransactions();
         } catch (err) {
@@ -273,9 +455,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(url, {
                 method: method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify(bodyData)
             });
+
+            if (response.status === 401 || response.status === 403) {
+                handleLogout();
+                return;
+            }
 
             if (!response.ok) throw new Error('Erro ao salvar transação.');
             
@@ -290,9 +477,12 @@ document.addEventListener('DOMContentLoaded', () => {
        Charts Section (Chart.js)
        ========================================================================== */
     function updateCharts() {
+        const isLightTheme = document.body.classList.contains('light-theme');
+        const textColorPrimary = isLightTheme ? '#0f172a' : '#f8f9fa';
+        const textColorMuted = isLightTheme ? '#64748b' : '#9fa6bc';
+        const gridColor = isLightTheme ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)';
+
         const expenses = transactions.filter(t => t.tipo === 'DESPESA');
-        
-        // 1. Group expenses by category
         const categories = {};
         expenses.forEach(e => {
             categories[e.categoria] = (categories[e.categoria] || 0) + parseFloat(e.valor);
@@ -346,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         legend: {
                             position: 'bottom',
                             labels: {
-                                color: '#9fa6bc',
+                                color: textColorMuted,
                                 font: { family: 'Outfit', size: 10 },
                                 boxWidth: 8
                             }
@@ -354,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         title: {
                             display: true,
                             text: 'Despesas por Categoria',
-                            color: '#f8f9fa',
+                            color: textColorPrimary,
                             font: { family: 'Outfit', size: 12, weight: '600' }
                         }
                     }
@@ -391,12 +581,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 maintainAspectRatio: false,
                 scales: {
                     y: {
-                        grid: { color: 'rgba(255,255,255,0.03)' },
-                        ticks: { color: '#9fa6bc', font: { family: 'Outfit', size: 10 } }
+                        grid: { color: gridColor },
+                        ticks: { color: textColorMuted, font: { family: 'Outfit', size: 10 } }
                     },
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#9fa6bc', font: { family: 'Outfit', size: 10 } }
+                        ticks: { color: textColorMuted, font: { family: 'Outfit', size: 10 } }
                     }
                 },
                 plugins: {
@@ -404,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     title: {
                         display: true,
                         text: 'Comparativo Geral',
-                        color: '#f8f9fa',
+                        color: textColorPrimary,
                         font: { family: 'Outfit', size: 12, weight: '600' }
                     }
                 }

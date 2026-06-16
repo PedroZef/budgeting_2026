@@ -4,6 +4,10 @@ import br.com.budgeting.ia.AssistantAgent;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,8 +15,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/assistant")
+@SecurityRequirement(name = "bearerAuth")
 public class AssistantController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AssistantController.class);
     private final AssistantAgent agent;
 
     public AssistantController(AssistantAgent agent) {
@@ -42,6 +48,7 @@ public class AssistantController {
             
             tempFile.delete(); // Limpa o arquivo temp depois de usar
             
+            logger.info("Operação concluída com sucesso: Comando de voz processado.");
             return ResponseEntity.ok(resposta);
         } catch (Exception e) {
             e.printStackTrace();
@@ -65,6 +72,7 @@ public class AssistantController {
             @RequestBody String commandText) {
         try {
             String resposta = agent.processarComandoDeTexto(commandText);
+            logger.info("Operação concluída com sucesso: Comando de texto processado.");
             return ResponseEntity.ok(resposta);
         } catch (Exception e) {
             e.printStackTrace();

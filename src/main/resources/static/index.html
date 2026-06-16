@@ -1,22 +1,25 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Finanças IA - Orçamento Inteligente</title>
-    
+
     <!-- Google Fonts & FontAwesome -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="index.css" />
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar / Header Area -->
@@ -28,38 +31,77 @@
                     <p>Orçamento Inteligente</p>
                 </div>
             </div>
-            <div class="status-indicator">
-                <span class="pulse-dot"></span>
-                <span class="status-text">Sistema Online</span>
+            <div class="header-controls">
+                <button id="theme-toggle" class="btn btn-secondary btn-sm" style="
+                            padding: 0.4rem;
+                            font-size: 1rem;
+                            border-radius: 50%;
+                            width: 32px;
+                            height: 32px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border: 1px solid var(--glass-border);
+                        " title="Alternar Tema">
+                    <i class="fa-solid fa-sun" id="theme-icon"></i>
+                </button>
+                <div class="status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span class="status-text" id="header-user">Sistema Online</span>
+                </div>
+                <button id="logout-btn" class="btn btn-secondary btn-sm hidden" style="
+                            padding: 0.4rem 0.8rem;
+                            font-size: 0.8rem;
+                            border-radius: 50px;
+                        ">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sair
+                </button>
             </div>
         </header>
 
         <!-- Main Content Grid -->
         <main class="app-main">
-            
             <!-- LEFT COLUMN: Voice Assistant & Metrics -->
             <section class="left-panel animate-slide-in">
                 <!-- Voice Assistant Card -->
                 <div class="glass-card voice-card">
                     <div class="card-header">
-                        <h2><i class="fa-solid fa-microphone-lines icon-gradient"></i> Assistente de Voz</h2>
+                        <h2>
+                            <i class="fa-solid fa-microphone-lines icon-gradient"></i>
+                            Assistente de Voz
+                        </h2>
                         <span class="badge">Groq + Whisper</span>
                     </div>
-                    <p class="description">Grave um comando de voz para registrar transações automaticamente. Exemplo: <em>"Gastei 45 reais em lazer hoje"</em> ou <em>"Recebi 3500 de salário"</em>.</p>
-                    
+                    <p class="description">
+                        Grave um comando de voz para registrar transações
+                        automaticamente. Exemplo:
+                        <em>"Gastei 45 reais em lazer hoje"</em> ou
+                        <em>"Recebi 3500 de salário"</em>.
+                    </p>
+
                     <div class="voice-controls">
                         <button id="record-btn" class="record-btn ripple">
                             <i class="fa-solid fa-microphone mic-icon"></i>
                             <div class="pulse-ring"></div>
                         </button>
-                        <div class="recording-timer" id="recording-timer">00:00</div>
-                        <div class="status-message" id="voice-status">Pronto para ouvir...</div>
+                        <div class="recording-timer" id="recording-timer">
+                            00:00
+                        </div>
+                        <div class="status-message" id="voice-status">
+                            Pronto para ouvir...
+                        </div>
                     </div>
-                    
+
                     <div class="response-box hidden" id="response-box">
                         <div class="response-header">
                             <span>Retorno da IA:</span>
-                            <button class="close-btn" onclick="document.getElementById('response-box').classList.add('hidden')">&times;</button>
+                            <button class="close-btn" onclick="
+                                        document
+                                            .getElementById('response-box')
+                                            .classList.add('hidden')
+                                    ">
+                                &times;
+                            </button>
                         </div>
                         <p class="response-text" id="response-text"></p>
                     </div>
@@ -68,21 +110,27 @@
                 <!-- Financial Metrics Cards -->
                 <div class="metrics-grid">
                     <div class="glass-card metric-card income">
-                        <div class="metric-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                        <div class="metric-icon">
+                            <i class="fa-solid fa-arrow-trend-up"></i>
+                        </div>
                         <div class="metric-info">
                             <h3>Receitas</h3>
                             <p class="amount" id="total-income">R$ 0,00</p>
                         </div>
                     </div>
                     <div class="glass-card metric-card expense">
-                        <div class="metric-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                        <div class="metric-icon">
+                            <i class="fa-solid fa-arrow-trend-down"></i>
+                        </div>
                         <div class="metric-info">
                             <h3>Despesas</h3>
                             <p class="amount" id="total-expense">R$ 0,00</p>
                         </div>
                     </div>
                     <div class="glass-card metric-card balance">
-                        <div class="metric-icon"><i class="fa-solid fa-wallet"></i></div>
+                        <div class="metric-icon">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
                         <div class="metric-info">
                             <h3>Saldo Líquido</h3>
                             <p class="amount" id="net-balance">R$ 0,00</p>
@@ -96,7 +144,10 @@
                 <!-- Graphs Row -->
                 <div class="glass-card chart-card">
                     <div class="card-header">
-                        <h2><i class="fa-solid fa-chart-pie icon-gradient"></i> Análise de Gastos</h2>
+                        <h2>
+                            <i class="fa-solid fa-chart-pie icon-gradient"></i>
+                            Análise de Gastos
+                        </h2>
                     </div>
                     <div class="chart-container">
                         <div class="chart-wrapper">
@@ -111,10 +162,15 @@
                 <!-- List & Manual Entry Card -->
                 <div class="glass-card list-card">
                     <div class="card-header flex-header">
-                        <h2><i class="fa-solid fa-list-check icon-gradient"></i> Transações Recentes</h2>
-                        <button id="new-transaction-btn" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Nova Transação</button>
+                        <h2>
+                            <i class="fa-solid fa-list-check icon-gradient"></i>
+                            Transações Recentes
+                        </h2>
+                        <button id="new-transaction-btn" class="btn btn-primary btn-sm">
+                            <i class="fa-solid fa-plus"></i> Nova Transação
+                        </button>
                     </div>
-                    
+
                     <div class="table-container">
                         <table class="transaction-table" id="transaction-table">
                             <thead>
@@ -130,17 +186,22 @@
                             <tbody id="transaction-list">
                                 <!-- Dynamic entries go here -->
                                 <tr>
-                                    <td colspan="6" class="empty-state">Carregando transações...</td>
+                                    <td colspan="6" class="empty-state">
+                                        Carregando transações...
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
-
         </main>
         <footer class="app-footer animate-fade-in">
-            <p>Desenvolvido com <i class="fa-solid fa-heart icon-heart"></i> por <strong>Pedro Zeferino da Silva</strong> &copy; 2026</p>
+            <p>
+                Desenvolvido com
+                <i class="fa-solid fa-heart icon-heart"></i> por
+                <strong>Pedro Zeferino da Silva</strong> &copy; 2026
+            </p>
         </footer>
     </div>
 
@@ -148,20 +209,25 @@
     <div class="modal-overlay hidden" id="transaction-modal">
         <div class="modal-content glass-card animate-scale-in">
             <div class="modal-header">
-                <h2 id="modal-title"><i class="fa-solid fa-pen-to-square"></i> Editar Transação</h2>
-                <button class="modal-close" id="modal-close-btn">&times;</button>
+                <h2 id="modal-title">
+                    <i class="fa-solid fa-pen-to-square"></i> Editar
+                    Transação
+                </h2>
+                <button class="modal-close" id="modal-close-btn">
+                    &times;
+                </button>
             </div>
             <form id="transaction-form">
-                <input type="hidden" id="form-id">
-                
+                <input type="hidden" id="form-id" />
+
                 <div class="form-group">
                     <label for="form-valor">Valor (R$)</label>
-                    <input type="number" id="form-valor" step="0.01" min="0.01" required placeholder="0.00">
+                    <input type="number" id="form-valor" step="0.01" min="0.01" required placeholder="0.00" />
                 </div>
 
                 <div class="form-group">
                     <label for="form-categoria">Categoria</label>
-                    <input type="text" id="form-categoria" required placeholder="Ex: Alimentação, Lazer, Transporte">
+                    <input type="text" id="form-categoria" required placeholder="Ex: Alimentação, Lazer, Transporte" />
                 </div>
 
                 <div class="form-group">
@@ -174,12 +240,90 @@
 
                 <div class="form-group">
                     <label for="form-usuario">Usuário</label>
-                    <input type="text" id="form-usuario" placeholder="Deixe em branco para usuário logado (pedro)">
+                    <input type="text" id="form-usuario" placeholder="Deixe em branco para usuário logado (pedro)" />
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" id="form-cancel">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" class="btn btn-secondary" id="form-cancel">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Overlay -->
+    <div class="modal-overlay" id="login-overlay">
+        <div class="modal-content glass-card animate-scale-in" style="max-width: 400px; width: 90%">
+            <div class="modal-header">
+                <h2>
+                    <i class="fa-solid fa-lock icon-gradient"></i>
+                    Autenticação
+                </h2>
+            </div>
+            <div id="auth-error-msg" class="status-message" style="
+                        margin-bottom: 15px;
+                        color: #ff4e7e;
+                        font-size: 0.9rem;
+                        text-align: center;
+                    "></div>
+
+            <!-- Login Form -->
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-username">Usuário</label>
+                    <input type="text" id="login-username" required placeholder="Ex: pedro" />
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Senha</label>
+                    <input type="password" id="login-password" required placeholder="Sua senha" />
+                </div>
+                <div class="form-actions" style="
+                            flex-direction: column;
+                            gap: 10px;
+                            margin-top: 20px;
+                        ">
+                    <button type="submit" class="btn btn-primary" style="width: 100%">
+                        Entrar
+                    </button>
+                    <button type="button" id="switch-to-register" class="btn btn-secondary" style="
+                                width: 100%;
+                                border: none;
+                                background: transparent;
+                            ">
+                        Não tem conta? Cadastre-se
+                    </button>
+                </div>
+            </form>
+
+            <!-- Register Form (Hidden by default) -->
+            <form id="register-form" class="hidden">
+                <div class="form-group">
+                    <label for="register-username">Novo Usuário</label>
+                    <input type="text" id="register-username" required placeholder="Nome de usuário" />
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Senha</label>
+                    <input type="password" id="register-password" required placeholder="Escolha uma senha" />
+                </div>
+                <div class="form-actions" style="
+                            flex-direction: column;
+                            gap: 10px;
+                            margin-top: 20px;
+                        ">
+                    <button type="submit" class="btn btn-primary" style="width: 100%">
+                        Cadastrar
+                    </button>
+                    <button type="button" id="switch-to-login" class="btn btn-secondary" style="
+                                width: 100%;
+                                border: none;
+                                background: transparent;
+                            ">
+                        Voltar para o Login
+                    </button>
                 </div>
             </form>
         </div>
@@ -188,4 +332,5 @@
     <!-- Custom Script -->
     <script src="index.js"></script>
 </body>
+
 </html>

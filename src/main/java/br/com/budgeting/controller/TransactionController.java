@@ -3,6 +3,7 @@ package br.com.budgeting.controller;
 import br.com.budgeting.model.Transaction;
 import br.com.budgeting.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +41,7 @@ public class TransactionController {
         description = "Cadastra manualmente uma nova transação."
     )
     @PostMapping
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Transaction> criar(@RequestBody Transaction novaTransacao) {
         String usuarioLogado = SecurityContextHolder.getContext().getAuthentication().getName();
         if (novaTransacao.getUsuario() == null || novaTransacao.getUsuario().isEmpty()) {
@@ -65,6 +67,7 @@ public class TransactionController {
         description = "Atualiza os dados (valor, categoria, tipo, etc.) de uma transação existente."
     )
     @PutMapping("/{id}")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Transaction> atualizar(
             @PathVariable Long id,
             @RequestBody Transaction dadosAtualizados) {
@@ -86,6 +89,7 @@ public class TransactionController {
         description = "Remove uma transação pelo ID."
     )
     @DeleteMapping("/{id}")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         try {
             service.deletar(id);

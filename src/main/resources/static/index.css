@@ -28,6 +28,11 @@
     --border-radius-sm: 8px;
 
     --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+    --border-bottom: rgba(255, 255, 255, 0.04);
+    --hover-bg: rgba(255, 255, 255, 0.01);
+    --input-bg: rgba(255, 255, 255, 0.05);
+    --input-focus-bg: rgba(255, 255, 255, 0.08);
 }
 
 /* Base resets & typography */
@@ -48,9 +53,6 @@ body {
     font-family: 'Outfit', sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     padding: 1.5rem;
 }
 
@@ -448,17 +450,17 @@ body {
     font-weight: 500;
     font-size: 0.85rem;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--border-bottom);
 }
 
 .transaction-table td {
     padding: 1rem;
     font-size: 0.9rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--border-bottom);
 }
 
 .transaction-table tr:hover td {
-    background: rgba(255, 255, 255, 0.01);
+    background: var(--hover-bg);
 }
 
 .empty-state {
@@ -634,7 +636,7 @@ body {
 
 .form-group input,
 .form-group select {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--input-bg);
     border: 1px solid var(--glass-border);
     border-radius: var(--border-radius-sm);
     padding: 0.75rem 1rem;
@@ -648,7 +650,7 @@ body {
 .form-group input:focus,
 .form-group select:focus {
     border-color: #a15bf9;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--input-focus-bg);
 }
 
 .form-actions {
@@ -784,7 +786,7 @@ body {
     text-align: center;
     margin-top: 3rem;
     padding-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--glass-border);
     color: var(--text-muted);
     font-size: 0.9rem;
     width: 100%;
@@ -807,4 +809,38 @@ body {
     28% { transform: scale(1); }
     42% { transform: scale(1.15); }
     70% { transform: scale(1); }
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Light Theme Overrides */
+body.light-theme {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-highlight: rgba(0, 0, 0, 0.02);
+
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+
+    --glow-primary: 0 8px 32px 0 rgba(161, 91, 249, 0.08);
+    --glow-success: 0 8px 32px 0 rgba(5, 230, 149, 0.08);
+    --glow-danger: 0 8px 32px 0 rgba(255, 78, 126, 0.08);
+
+    --border-bottom: rgba(0, 0, 0, 0.06);
+    --hover-bg: rgba(0, 0, 0, 0.02);
+    --input-bg: rgba(0, 0, 0, 0.03);
+    --input-focus-bg: rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme {
+    background-image: 
+        radial-gradient(circle at 15% 15%, rgba(161, 91, 249, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(247, 91, 149, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, #f1f5f9 0%, #e2e8f0 100%);
 }

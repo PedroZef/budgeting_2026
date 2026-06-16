@@ -2,6 +2,8 @@ package br.com.budgeting.controller;
 
 import br.com.budgeting.model.Transaction;
 import br.com.budgeting.service.TransactionService;
+import br.com.budgeting.security.JwtAuthenticationFilter;
+import br.com.budgeting.security.CustomUserDetailsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,23 @@ class TransactionControllerTest {
 
     @MockitoBean
     private TransactionService service;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() throws Exception {
+        org.mockito.Mockito.doAnswer(invocation -> {
+            jakarta.servlet.ServletRequest request = invocation.getArgument(0);
+            jakarta.servlet.ServletResponse response = invocation.getArgument(1);
+            jakarta.servlet.FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(request, response);
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
+    }
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 

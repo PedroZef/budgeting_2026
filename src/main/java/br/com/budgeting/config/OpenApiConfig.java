@@ -13,14 +13,14 @@ import org.springframework.context.annotation.Configuration;
         title = "API de Orçamento Inteligente (IA)",
         version = "v1",
         description = "API que utiliza Inteligência Artificial para processar comandos de voz e gerenciar transações financeiras."
-    ),
-    security = @SecurityRequirement(name = "basicAuth") // Aplica a segurança em todos os endpoints
+    )
 )
 @SecurityScheme(
-    name = "basicAuth",
+    name = "bearerAuth",
     type = SecuritySchemeType.HTTP,
-    scheme = "basic",
-    description = "Autenticação básica. Use o usuário e senha configurados no Spring Security."
+    scheme = "bearer",
+    bearerFormat = "JWT",
+    description = "Autenticação baseada em JWT. Use o endpoint `/api/auth/login` para gerar o token."
 )
 public class OpenApiConfig {
 }

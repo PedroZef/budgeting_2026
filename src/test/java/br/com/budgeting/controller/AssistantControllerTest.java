@@ -1,6 +1,8 @@
 package br.com.budgeting.controller;
 
 import br.com.budgeting.ia.AssistantAgent;
+import br.com.budgeting.security.CustomUserDetailsService;
+import br.com.budgeting.security.JwtAuthenticationFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -29,6 +31,23 @@ class AssistantControllerTest {
 
     @MockitoBean
     private AssistantAgent assistantAgent;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() throws Exception {
+        org.mockito.Mockito.doAnswer(invocation -> {
+            jakarta.servlet.ServletRequest request = invocation.getArgument(0);
+            jakarta.servlet.ServletResponse response = invocation.getArgument(1);
+            jakarta.servlet.FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(request, response);
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
+    }
 
     @Test
     @WithMockUser(username = "pedro")
