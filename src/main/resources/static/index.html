@@ -63,20 +63,20 @@
         <main class="app-main">
             <!-- LEFT COLUMN: Voice Assistant & Metrics -->
             <section class="left-panel animate-slide-in">
-                <!-- Voice Assistant Card -->
+                <!-- Generative AI Assistant Card -->
                 <div class="glass-card voice-card">
                     <div class="card-header">
                         <h2>
-                            <i class="fa-solid fa-microphone-lines icon-gradient"></i>
-                            Assistente de Voz
+                            <i class="fa-solid fa-wand-magic-sparkles icon-gradient"></i>
+                            Assistente IA Generativa
                         </h2>
-                        <span class="badge">Groq + Whisper</span>
+                        <span class="badge">Groq (Llama + Whisper)</span>
                     </div>
                     <p class="description">
-                        Grave um comando de voz para registrar transações
-                        automaticamente. Exemplo:
-                        <em>"Gastei 45 reais em lazer hoje"</em> ou
-                        <em>"Recebi 3500 de salário"</em>.
+                        Pergunte ou envie comandos por voz ou texto. Exemplo:
+                        <em>"Qual meu saldo total?"</em>, 
+                        <em>"Quanto gastei em alimentação?"</em> ou 
+                        <em>"Gastei 45 reais em lazer hoje"</em>.
                     </p>
 
                     <div class="voice-controls">
@@ -91,6 +91,14 @@
                             Pronto para ouvir...
                         </div>
                     </div>
+
+                    <!-- Text Query Form -->
+                    <form id="query-form" class="query-input-container">
+                        <input type="text" id="query-input" placeholder="Digite uma consulta inteligente ou comando..." required autocomplete="off" />
+                        <button type="submit" id="query-send-btn" title="Enviar pergunta">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </form>
 
                     <div class="response-box hidden" id="response-box">
                         <div class="response-header">

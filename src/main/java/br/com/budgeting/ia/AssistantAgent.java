@@ -18,7 +18,7 @@ public class AssistantAgent {
         this.transcriptionModel = transcriptionModel;
         this.transactionTools = transactionTools;
         this.chatClient = chatClientBuilder
-                .defaultSystem("Você é um assistente financeiro direto e objetivo. Ouça o comando, execute a ferramenta necessária e responda com um texto curto confirmando a ação. " +
+                .defaultSystem("Você é um assistente financeiro inteligente, direto e objetivo. Ouça o comando ou a pergunta, execute a ferramenta necessária (como registrar transação, obter saldo total, obter total gasto por categoria, buscar maior/menor despesa/receita ou obter resumo geral) e responda com um texto curto e natural trazendo as informações solicitadas ou confirmando a ação. " +
                         "Ao registrar a transação, você deve normalizar a categoria para termos padronizados em MAIÚSCULAS. Exemplos de mapeamento:\n" +
                         "- 'comida', 'restaurante', 'almoço', 'jantar', 'lanche' -> 'ALIMENTAÇÃO'\n" +
                         "- 'roupa', 'camiseta', 'vestuário', 'calçado', 'loja' -> 'ROUPAS'\n" +

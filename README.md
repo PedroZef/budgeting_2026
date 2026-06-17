@@ -16,6 +16,132 @@ A aplicação conta com um painel web interativo (*Glassmorphic UI*), suporte a 
 
 ---
 
+## 🏗️ Arquitetura do Sistema e Fluxo de Dados
+
+Abaixo estão detalhados a estrutura de componentes do sistema e os fluxos de execução das ações inteligentes orientadas por IA Generativa.
+
+### 1. Diagrama de Arquitetura do Sistema
+O sistema segue uma arquitetura em camadas bem delimitadas, onde o **Frontend** se comunica de forma assíncrona com o **Backend** exposto por APIs Rest protegidas por segurança baseada em JWT. O backend interage com o **Banco de Dados MySQL** e delega tarefas de inteligência cognitiva à **Groq Cloud API** através do **Spring AI**.
+
+```mermaid
+graph TD
+    %% Frontend Group
+    subgraph Frontend ["🖥️ Camada de Apresentação (Frontend)"]
+        UI["Glassmorphic UI (HTML5/CSS3)"]
+        JS["Lógica do Cliente (Vanilla JS)"]
+        ChartJS["Visualização de Dados (Chart.js)"]
+    end
+
+    %% Backend Group
+    subgraph Backend ["⚙️ Camada de Negócio (Spring Boot API)"]
+        Sec["Filtro de Segurança (JWT / Spring Security)"]
+        Controller["Controllers (Auth, Transaction, Assistant)"]
+        Service["Serviços (TransactionService, CustomUserDetailsService)"]
+        Repo["Acesso a Dados (Spring Data JPA Repositories)"]
+        Flyway["Migrações de Banco (Flyway)"]
+        SpringAI["Integração de IA (Spring AI)"]
+        Agent["Agente Assistente (AssistantAgent)"]
+        Tools["Ferramentas do Agente (TransactionTools)"]
+    end
+
+    %% Database Group
+    subgraph DB ["🗄️ Camada de Persistência"]
+        MySQL[("Banco de Dados MySQL")]
+    end
+
+    %% External APIs Group
+    subgraph External ["🤖 APIs Externas (Groq Cloud)"]
+        Llama["Llama 3.3 70B (Orquestração & Raciocínio)"]
+        Whisper["Whisper Large v3 (Transcrição de Áudio)"]
+    end
+
+    %% Connections
+    UI <--> JS
+    JS <--> ChartJS
+    JS -- "Requisições HTTP (com JWT)" --> Sec
+    Sec --> Controller
+    Controller --> Service
+    Service --> Repo
+    Repo <--> MySQL
+    Flyway --> MySQL
+    
+    Controller --> Agent
+    Agent --> SpringAI
+    SpringAI <--> External
+    
+    Agent --> Tools
+    Tools --> Service
+```
+
+### 2. Fluxo de Dados: Processamento de Comando de Voz
+Este fluxo ilustra o caminho percorrido desde o momento em que o usuário grava um comando de áudio até o registro físico da transação correspondente no banco de dados.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Usuario as Usuário
+    participant JS as Frontend (index.js)
+    participant API as Backend (AssistantController)
+    participant Agent as AssistantAgent
+    participant Groq as Groq Cloud (Whisper / Llama)
+    participant Tools as TransactionTools
+    participant DB as MySQL (Database)
+
+    Usuario->>JS: Clica em Gravar e fala "Gastei 50 reais com comida"
+    JS->>JS: Grava o áudio e gera o Blob (.ogg)
+    JS->>API: POST /api/assistant/voice (FormData com áudio + JWT Bearer)
+    API->>Agent: processarComandoDeVoz(arquivoDeAudio)
+    Agent->>Groq: Envia áudio para transcrição (Whisper)
+    Groq-->>Agent: Retorna texto: "Gastei 50 reais com comida"
+    Agent->>Groq: Envia texto com Prompt de Sistema e Ferramentas (Llama 3.3)
+    Note over Groq: Llama identifica que o usuário quer registrar uma despesa e chama a ferramenta.
+    Groq->>Agent: Solicita execução de registrarTransacao(valor=50, categoria="ALIMENTAÇÃO", tipo="DESPESA")
+    Agent->>Tools: Executa registrarTransacao(...)
+    Tools->>DB: INSERT INTO transactions (valor, categoria, tipo, usuario, data)
+    DB-->>Tools: Confirma inserção
+    Tools-->>Agent: Retorna mensagem de sucesso
+    Agent->>Groq: Envia resultado da ferramenta
+    Groq-->>Agent: Gera resposta final amigável: "Registrada despesa de R$ 50,00 em alimentação."
+    Agent-->>API: Retorna resposta final
+    API-->>JS: HTTP 200 OK com texto de resposta
+    JS->>Usuario: Exibe resposta na tela ("Retorno da IA")
+    JS->>DB: Atualiza tabela de transações e gráficos (via GET /api/transactions)
+```
+
+### 3. Fluxo de Dados: Consulta Inteligente por Texto
+Este fluxo demonstra como as perguntas analíticas enviadas por texto (como consultas de saldo ou relatórios) são resolvidas dinamicamente via LLM a partir de ferramentas integradas ao banco.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Usuario as Usuário
+    participant JS as Frontend (index.js)
+    participant API as Backend (AssistantController)
+    participant Agent as AssistantAgent
+    participant Groq as Groq Cloud (Llama 3.3)
+    participant Tools as TransactionTools
+    participant DB as MySQL (Database)
+
+    Usuario->>JS: Digita e envia "Qual o meu saldo total?"
+    JS->>API: POST /api/assistant/text (Corpo: "Qual o meu saldo total?" + JWT Bearer)
+    API->>Agent: processarComandoDeTexto("Qual o meu saldo total?")
+    Agent->>Groq: Envia texto com Prompt de Sistema e Ferramentas (Llama 3.3)
+    Note over Groq: Llama identifica a intenção de consultar o saldo e escolhe a ferramenta obterSaldoTotal.
+    Groq->>Agent: Solicita execução de obterSaldoTotal()
+    Agent->>Tools: Executa obterSaldoTotal()
+    Tools->>DB: SELECT * FROM transactions WHERE usuario = 'usuario_logado'
+    DB-->>Tools: Retorna lista de transações
+    Note over Tools: Calcula: totalReceitas - totalDespesas
+    Tools-->>Agent: Retorna dados brutos (Receitas, Despesas, Saldo Líquido)
+    Agent->>Groq: Envia resultado da ferramenta para o modelo
+    Groq-->>Agent: Resposta amigável: "Seu saldo líquido atual é R$ 2.450,00."
+    Agent-->>API: Retorna resposta em texto
+    API-->>JS: HTTP 200 OK com texto de resposta
+    JS->>Usuario: Exibe resposta amigável no box da IA
+```
+
+---
+
 ## 🚀 Guia Passo a Passo: Configuração e Execução
 
 Siga os passos abaixo para configurar e executar a aplicação em seu ambiente local:

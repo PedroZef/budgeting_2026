@@ -44,6 +44,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (rawJwt.toLowerCase().startsWith("bearer ")) {
             rawJwt = rawJwt.substring(7).trim();
         }
+        // Remove aspas duplas caso tenham sido coladas por engano
+        if (rawJwt.startsWith("\"") && rawJwt.endsWith("\"")) {
+            rawJwt = rawJwt.substring(1, rawJwt.length() - 1).trim();
+        }
         jwt = rawJwt;
         try {
             username = jwtService.extractUsername(jwt);

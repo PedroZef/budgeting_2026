@@ -63,12 +63,12 @@ public class AssistantController {
     }
 
     @Operation(
-        summary = "Processar comando de texto",
-        description = "Recebe um comando financeiro por escrito em formato de texto simples, interpreta via IA e salva no banco."
+        summary = "Consultas inteligentes e comandos por texto",
+        description = "Recebe uma pergunta ou comando financeiro por escrito em texto simples, processa via Inteligência Artificial utilizando ferramentas do sistema para obter saldos, despesas ou registrar transações, e retorna a resposta gerada pela IA."
     )
     @PostMapping(value = "/text", consumes = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> handleTextCommand(
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Comando financeiro escrito. Ex: Registrar despesa de 50 reais em alimentação")
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Pergunta ou comando financeiro. Exemplos: 'Qual o meu saldo total?', 'Quanto gastei com lazer?', 'Qual foi minha maior despesa?', 'Registrar despesa de 50 reais em alimentação'")
             @RequestBody String commandText) {
         try {
             String resposta = agent.processarComandoDeTexto(commandText);

@@ -18,12 +18,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let categoryChartInstance = null;
     let trendChartInstance = null;
 
-    // UI Elements - Voice
+    // UI Elements - Voice & Text Assistant
     const recordBtn = document.getElementById('record-btn');
     const timerDisplay = document.getElementById('recording-timer');
     const voiceStatus = document.getElementById('voice-status');
     const responseBox = document.getElementById('response-box');
     const responseText = document.getElementById('response-text');
+    const queryForm = document.getElementById('query-form');
+    const queryInput = document.getElementById('query-input');
 
     // UI Elements - Table & Metrics
     const transactionList = document.getElementById('transaction-list');
@@ -317,6 +319,52 @@ document.addEventListener('DOMContentLoaded', () => {
             responseBox.classList.remove('hidden');
         }
     }
+
+    // Handle text query submission
+    queryForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const queryText = queryInput.value.trim();
+        if (!queryText) return;
+
+        voiceStatus.innerText = 'Processando consulta com a IA...';
+        responseText.innerText = '';
+        responseBox.classList.add('hidden');
+
+        try {
+            const response = await fetch('/api/assistant/text', {
+                method: 'POST',
+                headers: getAuthHeaders({
+                    'Content-Type': 'text/plain'
+                }),
+                body: queryText
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                handleLogout();
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error('Falha no processamento do servidor.');
+            }
+
+            const data = await response.text();
+            
+            // Display response
+            responseText.innerText = data;
+            responseBox.classList.remove('hidden');
+            voiceStatus.innerText = 'Consulta processada com sucesso!';
+            queryInput.value = ''; // clear input
+            
+            // Refresh database in case the query was actually a command that changed state
+            fetchTransactions();
+        } catch (err) {
+            console.error('Erro ao enviar consulta:', err);
+            voiceStatus.innerText = 'Erro ao processar consulta.';
+            responseText.innerText = 'Erro: ' + err.message;
+            responseBox.classList.remove('hidden');
+        }
+    });
 
     /* ==========================================================================
        CRUD Section
