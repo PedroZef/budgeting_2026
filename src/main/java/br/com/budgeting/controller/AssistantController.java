@@ -2,17 +2,20 @@ package br.com.budgeting.controller;
 
 import br.com.budgeting.ia.AssistantAgent;
 import br.com.budgeting.ia.LatestInteraction;
+import br.com.budgeting.model.Interaction;
+import br.com.budgeting.repository.InteractionRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/assistant")
@@ -21,9 +24,11 @@ public class AssistantController {
 
     private static final Logger logger = LoggerFactory.getLogger(AssistantController.class);
     private final AssistantAgent agent;
+    private final InteractionRepository interactionRepository;
 
-    public AssistantController(AssistantAgent agent) {
+    public AssistantController(AssistantAgent agent, InteractionRepository interactionRepository) {
         this.agent = agent;
+        this.interactionRepository = interactionRepository;
     }
 
     @Operation(
@@ -92,5 +97,21 @@ public class AssistantController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(interaction);
+    }
+
+    @Operation(
+        summary = "Listar histórico de interações do assistente",
+        description = "Retorna todos os detalhes das interações (de texto ou voz) cadastrados. Se o usuário estiver logado, filtra por ele, caso contrário retorna todas."
+    )
+    @GetMapping(value = "/interactions", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Interaction>> listarInteracoes() {
+        String usuarioLogado = SecurityContextHolder.getContext().getAuthentication().getName();
+        List<Interaction> interacoes;
+        if (usuarioLogado == null || usuarioLogado.equals("anonymousUser")) {
+            interacoes = interactionRepository.findAllByOrderByTimestampDesc();
+        } else {
+            interacoes = interactionRepository.findByUsuarioOrderByTimestampDesc(usuarioLogado);
+        }
+        return ResponseEntity.ok(interacoes);
     }
 }
