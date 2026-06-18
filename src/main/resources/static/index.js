@@ -17,6 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let transactions = [];
     let categoryChartInstance = null;
     let trendChartInstance = null;
+    let transactionPollInterval = null;
+    let lastInteractionId = null;
+    let interactionPollInterval = null;
+    const pageLoadTime = Date.now();
 
     // UI Elements - Voice & Text Assistant
     const recordBtn = document.getElementById('record-btn');
@@ -118,17 +122,55 @@ document.addEventListener('DOMContentLoaded', () => {
             loginOverlay.classList.add('hidden');
             logoutBtn.classList.remove('hidden');
             headerUser.innerText = username;
+            
+            // Redireciona para / se o usuário estiver logado e na rota /login
+            if (window.location.pathname === '/login') {
+                history.pushState(null, '', '/');
+            }
+            
             fetchTransactions();
+            
+            // Start polling if not already started
+            if (!transactionPollInterval) {
+                transactionPollInterval = setInterval(fetchTransactions, 5000);
+            }
+            if (!interactionPollInterval) {
+                checkLatestInteraction(); // check immediately on load
+                interactionPollInterval = setInterval(checkLatestInteraction, 3000);
+            }
         } else {
             loginOverlay.classList.remove('hidden');
             logoutBtn.classList.add('hidden');
             headerUser.innerText = 'Sistema Offline';
+            
+            // Redireciona para /login se o usuário não estiver logado e não estiver na rota /login
+            if (window.location.pathname !== '/login') {
+                history.pushState(null, '', '/login');
+            }
+            
+            // Stop polling
+            if (transactionPollInterval) {
+                clearInterval(transactionPollInterval);
+                transactionPollInterval = null;
+            }
+            if (interactionPollInterval) {
+                clearInterval(interactionPollInterval);
+                interactionPollInterval = null;
+            }
         }
     }
 
     function handleLogout() {
         localStorage.removeItem('token');
         localStorage.removeItem('username');
+        if (transactionPollInterval) {
+            clearInterval(transactionPollInterval);
+            transactionPollInterval = null;
+        }
+        if (interactionPollInterval) {
+            clearInterval(interactionPollInterval);
+            interactionPollInterval = null;
+        }
         checkAuthState();
         // Clear UI
         transactions = [];
@@ -310,6 +352,9 @@ document.addEventListener('DOMContentLoaded', () => {
             responseBox.classList.remove('hidden');
             voiceStatus.innerText = 'Comando processado com sucesso!';
             
+            // Sync latest interaction ID to prevent background polling from treating it as external
+            await syncLatestInteractionId();
+
             // Refresh database
             fetchTransactions();
         } catch (err) {
@@ -356,6 +401,9 @@ document.addEventListener('DOMContentLoaded', () => {
             voiceStatus.innerText = 'Consulta processada com sucesso!';
             queryInput.value = ''; // clear input
             
+            // Sync latest interaction ID to prevent background polling from treating it as external
+            await syncLatestInteractionId();
+
             // Refresh database in case the query was actually a command that changed state
             fetchTransactions();
         } catch (err) {
@@ -365,6 +413,100 @@ document.addEventListener('DOMContentLoaded', () => {
             responseBox.classList.remove('hidden');
         }
     });
+
+    async function checkLatestInteraction() {
+        try {
+            const response = await fetch('/api/assistant/latest');
+            if (response.status === 204) {
+                return;
+            }
+            if (!response.ok) {
+                return;
+            }
+            const data = await response.json();
+            if (!data || !data.id) return;
+
+            if (data.id !== lastInteractionId) {
+                lastInteractionId = data.id;
+
+                // Exibe a interação se ela ocorreu após o carregamento da página (com margem de 5s para latências)
+                if (data.timestamp > pageLoadTime - 5000) {
+                    // Update response box with external command UI
+                    responseText.innerHTML = `
+                        <div class="external-interaction animate-fade-in" style="
+                            background: rgba(255, 255, 255, 0.03);
+                            border: 1px dashed var(--glass-border);
+                            border-radius: var(--border-radius-sm);
+                            padding: 12px;
+                            text-align: left;
+                        ">
+                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                                <span class="badge" style="
+                                    background: var(--gradient-primary);
+                                    font-size: 0.75rem;
+                                    padding: 3px 8px;
+                                    border-radius: 4px;
+                                    color: #fff;
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 4px;
+                                    margin-bottom: 0;
+                                ">
+                                    <i class="fa-solid fa-code"></i> Swagger / API POST
+                                </span>
+                                <span style="font-size: 0.7rem; color: var(--text-muted);">
+                                    Detectado via Polling
+                                </span>
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-bottom: 2px;">
+                                    Comando recebido:
+                                </span>
+                                <span style="font-size: 0.9rem; font-style: italic; color: var(--text-primary);">
+                                    "${data.query}"
+                                </span>
+                            </div>
+                            <div style="border-top: 1px solid var(--glass-border); padding-top: 8px;">
+                                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); display: block; margin-bottom: 2px;">
+                                    Resposta da IA:
+                                </span>
+                                <span style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.4; display: block;">
+                                    ${data.response}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    responseBox.classList.remove('hidden');
+                    voiceStatus.innerText = 'Novo comando processado via Swagger/API!';
+                    
+                    // Highlight voice status text
+                    voiceStatus.style.color = '#05e695';
+                    setTimeout(() => {
+                        voiceStatus.style.color = '';
+                    }, 3000);
+
+                    // Refresh transactions list & charts
+                    fetchTransactions();
+                }
+            }
+        } catch (err) {
+            console.error('Erro ao verificar última interação:', err);
+        }
+    }
+
+    async function syncLatestInteractionId() {
+        try {
+            const response = await fetch('/api/assistant/latest');
+            if (response.ok && response.status !== 204) {
+                const data = await response.json();
+                if (data && data.id) {
+                    lastInteractionId = data.id;
+                }
+            }
+        } catch (e) {
+            console.warn('Erro ao sincronizar última interação:', e);
+        }
+    }
 
     /* ==========================================================================
        CRUD Section
@@ -687,4 +829,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return 'fa-solid fa-tag';
     }
+
+    window.addEventListener('popstate', checkAuthState);
 });

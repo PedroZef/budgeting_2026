@@ -1,6 +1,8 @@
 package br.com.budgeting.ia;
 
 import br.com.budgeting.ia.tools.TransactionTools;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiAudioTranscriptionModel;
@@ -9,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AssistantAgent {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AssistantAgent.class);
     
     private final OpenAiAudioTranscriptionModel transcriptionModel;
     private final ChatClient chatClient;
@@ -29,16 +33,49 @@ public class AssistantAgent {
                 .build();
     }
 
+    private volatile LatestInteraction latestInteraction;
+
     public String processarComandoDeVoz(Resource arquivoDeAudio) {
         String texto = transcriptionModel.call(new AudioTranscriptionPrompt(arquivoDeAudio)).getResult().getOutput();
-        return processarComandoDeTexto(texto);
+        logger.info("[Voice Command] Transcrição do áudio: \"{}\"", texto);
+        
+        if (texto == null || texto.trim().isEmpty() || texto.trim().equals(".")) {
+            String resposta = "Não consegui ouvir o comando de voz. Por favor, fale novamente.";
+            this.latestInteraction = new LatestInteraction("VOICE", (texto != null ? texto : ""), resposta);
+            return resposta;
+        }
+
+        String resposta = executarChat(texto);
+        logger.info("[Voice Command] Resposta do Assistente: \"{}\"", resposta);
+        this.latestInteraction = new LatestInteraction("VOICE", texto, resposta);
+        return resposta;
     }
 
     public String processarComandoDeTexto(String texto) {
+        logger.info("[Text Command] Recebido: \"{}\"", texto);
+        
+        if (texto == null || texto.trim().isEmpty() || texto.trim().equals(".")) {
+            String resposta = "Por favor, digite uma pergunta ou comando válido.";
+            this.latestInteraction = new LatestInteraction("TEXT", (texto != null ? texto : ""), resposta);
+            return resposta;
+        }
+
+        String resposta = executarChat(texto);
+        logger.info("[Text Command] Resposta do Assistente: \"{}\"", resposta);
+        this.latestInteraction = new LatestInteraction("TEXT", texto, resposta);
+        return resposta;
+    }
+
+    private String executarChat(String texto) {
         return chatClient.prompt()
                 .user(texto)
                 .tools(transactionTools)
                 .call()
                 .content();
     }
+
+    public LatestInteraction getLatestInteraction() {
+        return this.latestInteraction;
+    }
 }
+

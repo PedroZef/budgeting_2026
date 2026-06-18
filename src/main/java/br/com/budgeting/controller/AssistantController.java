@@ -1,6 +1,7 @@
 package br.com.budgeting.controller;
 
 import br.com.budgeting.ia.AssistantAgent;
+import br.com.budgeting.ia.LatestInteraction;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 
@@ -78,5 +79,18 @@ public class AssistantController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Erro: " + e.getMessage());
         }
+    }
+
+    @Operation(
+        summary = "Obter a última interação do assistente",
+        description = "Retorna os detalhes da última interação (de texto ou voz) que foi processada."
+    )
+    @GetMapping(value = "/latest", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<LatestInteraction> getLatestInteraction() {
+        LatestInteraction interaction = agent.getLatestInteraction();
+        if (interaction == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(interaction);
     }
 }
