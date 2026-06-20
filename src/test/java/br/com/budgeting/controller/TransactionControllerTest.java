@@ -114,6 +114,13 @@ class TransactionControllerTest {
         t.setCategoria("Alimentação");
         t.setTipo("DESPESA");
 
+        Transaction existente = new Transaction();
+        existente.setId(1L);
+        existente.setUsuario("pedro");
+        existente.setValor(new BigDecimal("100.00"));
+        existente.setCategoria("Alimentação");
+        existente.setTipo("DESPESA");
+
         Transaction atualizada = new Transaction();
         atualizada.setId(1L);
         atualizada.setUsuario("pedro");
@@ -121,6 +128,7 @@ class TransactionControllerTest {
         atualizada.setCategoria("Alimentação");
         atualizada.setTipo("DESPESA");
 
+        when(service.buscarPorId(1L)).thenReturn(Optional.of(existente));
         when(service.atualizar(eq(1L), any(Transaction.class))).thenReturn(atualizada);
 
         // When & Then
@@ -136,6 +144,16 @@ class TransactionControllerTest {
     @Test
     @WithMockUser(username = "pedro")
     void deveDeletarTransacaoComSucesso() throws Exception {
+        // Given
+        Transaction existente = new Transaction();
+        existente.setId(1L);
+        existente.setUsuario("pedro");
+        existente.setValor(new BigDecimal("150.00"));
+        existente.setCategoria("Lazer");
+        existente.setTipo("DESPESA");
+
+        when(service.buscarPorId(1L)).thenReturn(Optional.of(existente));
+
         // When & Then
         mockMvc.perform(delete("/api/transactions/1")
                         .with(csrf()))

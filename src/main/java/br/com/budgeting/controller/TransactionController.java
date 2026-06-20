@@ -1,9 +1,11 @@
 package br.com.budgeting.controller;
 
+import br.com.budgeting.dto.TransactionDTO;
 import br.com.budgeting.model.Transaction;
 import br.com.budgeting.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -22,18 +24,20 @@ public class TransactionController {
 
     @Operation(
         summary = "Listar transações",
-        description = "Retorna todas as transações cadastradas. Se o usuário estiver logado, filtra por ele, caso contrário retorna todas."
+        description = "Retorna as transações cadastradas do usuário logado."
     )
     @GetMapping
-    public ResponseEntity<List<Transaction>> listar() {
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<List<TransactionDTO>> listar() {
         String usuarioLogado = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<Transaction> transacoes;
         if (usuarioLogado == null || usuarioLogado.equals("anonymousUser")) {
-            transacoes = service.buscarTodos();
-        } else {
-            transacoes = service.listarPorUsuario(usuarioLogado);
+            return ResponseEntity.status(401).build();
         }
-        return ResponseEntity.ok(transacoes);
+        List<Transaction> transacoes = service.listarPorUsuario(usuarioLogado);
+        List<TransactionDTO> dtos = transacoes.stream()
+                .map(TransactionDTO::new)
+                .toList();
+        return ResponseEntity.ok(dtos);
     }
 
     @Operation(
@@ -42,13 +46,13 @@ public class TransactionController {
     )
     @PostMapping
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<Transaction> criar(@RequestBody Transaction novaTransacao) {
+    public ResponseEntity<TransactionDTO> criar(@Valid @RequestBody TransactionDTO dto) {
         String usuarioLogado = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (novaTransacao.getUsuario() == null || novaTransacao.getUsuario().isEmpty()) {
-            novaTransacao.setUsuario(usuarioLogado != null && !usuarioLogado.equals("anonymousUser") ? usuarioLogado : "pedro");
+        if (dto.getUsuario() == null || dto.getUsuario().isEmpty()) {
+            dto.setUsuario(usuarioLogado != null && !usuarioLogado.equals("anonymousUser") ? usuarioLogado : "pedro");
         }
-        Transaction salva = service.salvar(novaTransacao);
-        return ResponseEntity.ok(salva);
+        Transaction salva = service.salvar(dto.toEntity());
+        return ResponseEntity.ok(new TransactionDTO(salva));
     }
 
     @Operation(
@@ -56,9 +60,16 @@ public class TransactionController {
         description = "Retorna os detalhes de uma transação específica pelo ID."
     )
     @GetMapping("/{id}")
-    public ResponseEntity<Transaction> obterPorId(@PathVariable Long id) {
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<TransactionDTO> obterPorId(@PathVariable Long id) {
+        String usuarioLogado = SecurityContextHolder.getContext().getAuthentication().getName();
         return service.buscarPorId(id)
-                .map(ResponseEntity::ok)
+                .map(t -> {
+                    if (t.getUsuario() != null && !t.getUsuario().equals(usuarioLogado)) {
+                        return ResponseEntity.status(403).<TransactionDTO>build();
+                    }
+                    return ResponseEntity.ok(new TransactionDTO(t));
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -68,17 +79,23 @@ public class TransactionController {
     )
     @PutMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<Transaction> atualizar(
+    public ResponseEntity<TransactionDTO> atualizar(
             @PathVariable Long id,
-            @RequestBody Transaction dadosAtualizados) {
+            @Valid @RequestBody TransactionDTO dto) {
+        String usuarioLogado = SecurityContextHolder.getContext().getAuthentication().getName();
+        java.util.Optional<Transaction> original = service.buscarPorId(id);
+        if (original.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        if (original.get().getUsuario() != null && !original.get().getUsuario().equals(usuarioLogado)) {
+            return ResponseEntity.status(403).build();
+        }
         try {
-            // Se o usuário logado não for anônimo, define-o na transação
-            String usuarioLogado = SecurityContextHolder.getContext().getAuthentication().getName();
             if (usuarioLogado != null && !usuarioLogado.equals("anonymousUser")) {
-                dadosAtualizados.setUsuario(usuarioLogado);
+                dto.setUsuario(usuarioLogado);
             }
-            Transaction atualizada = service.atualizar(id, dadosAtualizados);
-            return ResponseEntity.ok(atualizada);
+            Transaction atualizada = service.atualizar(id, dto.toEntity());
+            return ResponseEntity.ok(new TransactionDTO(atualizada));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -91,6 +108,14 @@ public class TransactionController {
     @DeleteMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
+        String usuarioLogado = SecurityContextHolder.getContext().getAuthentication().getName();
+        java.util.Optional<Transaction> original = service.buscarPorId(id);
+        if (original.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        if (original.get().getUsuario() != null && !original.get().getUsuario().equals(usuarioLogado)) {
+            return ResponseEntity.status(403).build();
+        }
         try {
             service.deletar(id);
             return ResponseEntity.noContent().build();

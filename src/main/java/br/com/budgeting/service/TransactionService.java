@@ -6,7 +6,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
+@Transactional(readOnly = true)
 public class TransactionService {
     private final TransactionRepository repository;
 
@@ -14,6 +17,7 @@ public class TransactionService {
         this.repository = repository;
     }
 
+    @Transactional
     public Transaction salvar(Transaction transaction) {
         return repository.save(transaction);
     }
@@ -30,6 +34,7 @@ public class TransactionService {
         return repository.findById(id);
     }
 
+    @Transactional
     public Transaction atualizar(Long id, Transaction dadosAtualizados) {
         return repository.findById(id)
                 .map(t -> {
@@ -47,6 +52,7 @@ public class TransactionService {
                 .orElseThrow(() -> new RuntimeException("Transação não encontrada com id: " + id));
     }
 
+    @Transactional
     public void deletar(Long id) {
         repository.deleteById(id);
     }

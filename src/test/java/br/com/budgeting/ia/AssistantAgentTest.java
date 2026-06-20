@@ -14,6 +14,8 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiAudioTranscriptionModel;
 import org.springframework.core.io.Resource;
 
+import br.com.budgeting.repository.InteractionRepository;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -35,6 +37,9 @@ class AssistantAgentTest {
     private TransactionTools transactionTools;
 
     @Mock
+    private InteractionRepository interactionRepository;
+
+    @Mock
     private Resource audioResource;
 
     private AssistantAgent assistantAgent;
@@ -44,7 +49,7 @@ class AssistantAgentTest {
         when(chatClientBuilder.defaultSystem(anyString())).thenReturn(chatClientBuilder);
         when(chatClientBuilder.build()).thenReturn(chatClient);
 
-        assistantAgent = new AssistantAgent(transcriptionModel, chatClientBuilder, transactionTools);
+        assistantAgent = new AssistantAgent(transcriptionModel, chatClientBuilder, transactionTools, interactionRepository);
     }
 
     @Test

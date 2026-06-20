@@ -55,10 +55,8 @@ public class SecurityConfig {
                     "/v3/api-docs",
                     "/api-docs/**",
                     "/api-docs",
-                    "/swagger-ui.html",
-                    "/api/assistant/latest"
+                    "/swagger-ui.html"
                 ).permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/transactions/**").permitAll()
                 .requestMatchers("/api/transactions/**", "/api/assistant/**").authenticated()
                 .anyRequest().authenticated()
             )

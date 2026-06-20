@@ -92,7 +92,8 @@ public class AssistantController {
     )
     @GetMapping(value = "/latest", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<LatestInteraction> getLatestInteraction() {
-        LatestInteraction interaction = agent.getLatestInteraction();
+        String usuarioLogado = SecurityContextHolder.getContext().getAuthentication().getName();
+        LatestInteraction interaction = agent.getLatestInteraction(usuarioLogado);
         if (interaction == null) {
             return ResponseEntity.noContent().build();
         }

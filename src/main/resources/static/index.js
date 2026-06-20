@@ -416,7 +416,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function checkLatestInteraction() {
         try {
-            const response = await fetch('/api/assistant/latest');
+            const response = await fetch('/api/assistant/latest', {
+                headers: getAuthHeaders()
+            });
             if (response.status === 204) {
                 return;
             }
@@ -496,7 +498,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function syncLatestInteractionId() {
         try {
-            const response = await fetch('/api/assistant/latest');
+            const response = await fetch('/api/assistant/latest', {
+                headers: getAuthHeaders()
+            });
             if (response.ok && response.status !== 204) {
                 const data = await response.json();
                 if (data && data.id) {

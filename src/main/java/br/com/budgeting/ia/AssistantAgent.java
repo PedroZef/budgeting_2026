@@ -42,7 +42,13 @@ public class AssistantAgent {
                 .build();
     }
 
-    private volatile LatestInteraction latestInteraction;
+    private final java.util.Map<String, LatestInteraction> latestInteractions = new java.util.concurrent.ConcurrentHashMap<>();
+
+    private String getUsuarioLogado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String name = (auth != null) ? auth.getName() : null;
+        return (name == null || name.equals("anonymousUser")) ? "anonymousUser" : name;
+    }
 
     public String processarComandoDeVoz(Resource arquivoDeAudio) {
         String texto = transcriptionModel.call(new AudioTranscriptionPrompt(arquivoDeAudio)).getResult().getOutput();
@@ -59,7 +65,7 @@ public class AssistantAgent {
         
         salvarInteracao("VOICE", (texto != null ? texto : ""), resposta);
         
-        this.latestInteraction = new LatestInteraction("VOICE", (texto != null ? texto : ""), resposta);
+        this.latestInteractions.put(getUsuarioLogado(), new LatestInteraction("VOICE", (texto != null ? texto : ""), resposta));
         return resposta;
     }
 
@@ -77,7 +83,7 @@ public class AssistantAgent {
         
         salvarInteracao("TEXT", (texto != null ? texto : ""), resposta);
         
-        this.latestInteraction = new LatestInteraction("TEXT", (texto != null ? texto : ""), resposta);
+        this.latestInteractions.put(getUsuarioLogado(), new LatestInteraction("TEXT", (texto != null ? texto : ""), resposta));
         return resposta;
     }
 
@@ -102,8 +108,9 @@ public class AssistantAgent {
         }
     }
 
-    public LatestInteraction getLatestInteraction() {
-        return this.latestInteraction;
+    public LatestInteraction getLatestInteraction(String username) {
+        String key = (username == null || username.equals("anonymousUser")) ? "anonymousUser" : username;
+        return this.latestInteractions.get(key);
     }
 }
 

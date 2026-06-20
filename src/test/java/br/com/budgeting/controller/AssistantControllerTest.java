@@ -33,6 +33,9 @@ class AssistantControllerTest {
     private AssistantAgent assistantAgent;
 
     @MockitoBean
+    private br.com.budgeting.repository.InteractionRepository interactionRepository;
+
+    @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @MockitoBean
